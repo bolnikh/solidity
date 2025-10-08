@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Bootstrap demo</title>
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+  </head>
+  <body>
+
+
+    <div id="app" class="container">
+        <h1>Simple Bank Sepolia</h1>
+
+
+        <div class="row mb-3">
+            <div class="col">
+                Account Balance: {{ formatBalanceSimple(this.balance) }}
+            </div>
+            <div class="col">
+                Account Transactions: {{ this.trx_count }}
+            </div>  
+            <div class="col">
+            </div>            
+        </div>
+
+        <div class="row mb-3">
+            <div class="col">
+                All Bank Balance: {{ formatBalanceSimple(this.all_contract_balance) }}
+            </div>
+            <div class="col">
+                Account Bank Balance: {{ formatBalanceSimple(this.contract_balance) }}
+            </div>  
+            <div class="col">
+
+            </div>            
+        </div>
+
+        <div class="row mb-3" v-if="account">
+            <div class="col">
+                <label for="amount" class="form-label">Amount: </label>                
+            </div>            
+            <div class="col">
+                 <input class="form-control" v-model="amount_deposit" id="amount"/>
+            </div>
+            <div class="col">
+                 <select class="form-control" v-model="amount_deposit_coeff">
+                    <option value="wei">Wei</option>
+                    <option value="gwei">GWei</option>
+                    <option value="ether">Ether</option>
+                 </select>                
+            </div>  
+            <div class="col">
+                <button class="btn btn-primary" v-on:click="deposit">Deposit</button>
+            </div>            
+        </div>
+        
+        <div class="row mb-3" v-if="account">
+            <div class="col">
+                <label for="amount" class="form-label">Amount: </label>                
+            </div>            
+            <div class="col">
+                 <input class="form-control" v-model="amount_withdraw" id="amount"/>
+            </div>
+            <div class="col">
+                <select class="form-control" v-model="amount_withdraw_coeff">
+                    <option value="wei">Wei</option>
+                    <option value="gwei">GWei</option>
+                    <option value="ether">Ether</option>
+                 </select>
+            </div>  
+            <div class="col">
+                <button class="btn btn-primary" v-on:click="withdraw">Withdraw</button>
+            </div>            
+        </div>        
+  </div>
+
+    </div>
+
+    <script src="/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
+
+
+    <script type="module">
+        import { ethers } from "https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.min.js";
+
+        let app = new Vue({
+        el: '#app',
+        data: {
+            account: null,
+            balance: null,
+            trx_count: null,
+            provider: null,
+            abi: null,
+            contract: null,
+            contract_address: "0x24217066f6e7e30E712C3b3e58Fd3D65de4AD8EA",
+            contract_balance: null,
+            amount_deposit: null,
+            amount_deposit_coeff: 'wei',
+            amount_withdraw: null,
+            amount_withdraw_coeff: 'wei',
+            all_contract_balance: null,
+            url: 'https://sepolia.infura.io/v3/c38b596bcda54ac691215d316da4dee0',
+            accounts: [],
+        },
+
+        methods: {
+            updateAccount: async function() {
+                this.balance = null;
+                this.trx_count = null;
+                this.contract_balance = null;
+
+                this.refreshAccount();
+            },
+
+            refreshAccount: async function() {
+                this.balance = await this.provider.getBalance(this.account.address);
+                this.trx_count = await this.provider.getTransactionCount(this.account.address);
+                this.contract_balance = await this.contract.getBalance();
+                this.all_contract_balance = await this.provider.getBalance(this.contract_address); 
+            },
+
+            deposit: async function() {
+                try {
+                    let val = this.calc_wei(this.amount_deposit, this.amount_deposit_coeff);
+                    await this.contract.deposit({value: val});
+                    this.refreshAccount();
+                } catch(e) {
+                    console.log(e.message);
+                    alert('Error');
+                }                
+            },
+
+            withdraw: async function() {
+                try {
+                    let val = this.calc_wei(this.amount_withdraw, this.amount_withdraw_coeff);
+                    await this.contract.withdraw(val);
+                    this.refreshAccount();
+                } catch(e) {
+                    console.log(e.message);
+                    alert('Error');
+                }                
+            },
+
+            formatBalanceSimple: function (weiBalance) {
+                if (weiBalance == undefined || weiBalance == null) {
+                    return '0';
+                }    
+
+                const ethBalance = parseFloat(ethers.formatEther(weiBalance));
+                
+                if (ethBalance >= 0.001) {
+                    return `${ethBalance.toFixed(6).replace(/\.?0+$/, '')} ETH`;
+                } else {
+                    const gweiBalance = parseFloat(ethers.formatUnits(weiBalance, "gwei"));
+                    if (gweiBalance >= 0.1) {
+                        return `${gweiBalance.toFixed(3).replace(/\.?0+$/, '')} Gwei`;
+                    } else {
+                        return `${BigInt(weiBalance).toLocaleString()} Wei`;
+                    }
+                }
+            },
+
+            calc_wei: function(amount, coeff) {
+                if (coeff == 'wei') {
+                    return BigInt(amount);
+                }
+                if (coeff == 'gwei') {
+                    return BigInt(amount * 1000000000);
+                }
+                if (coeff == 'ether') {
+                    return BigInt(amount * 1000000000000000000);
+                }
+                return '-1';                
+            },
+
+            // Функция для проверки и переключения на сеть Sepolia
+            switchToSepoliaNetwork: async function() {
+                const SEPOLIA_CONFIG = {
+                    chainId: '0xaa36a7', // 11155111 в hex
+                    chainName: 'Sepolia',
+                    rpcUrls: ['https://rpc.sepolia.org'],
+                    nativeCurrency: {
+                        name: 'Ether',
+                        symbol: 'ETH',
+                        decimals: 18
+                    },
+                    blockExplorerUrls: ['https://sepolia.etherscan.io/']
+                };
+
+                try {
+                    // Пытаемся переключиться на сеть Sepolia
+                    await window.ethereum.request({
+                        method: 'wallet_switchEthereumChain',
+                        params: [{ chainId: SEPOLIA_CONFIG.chainId }],
+                    });
+                    console.log('Switched to Sepolia network');
+                    return true;
+                } catch (switchError) {
+                    // Если сеть не добавлена, добавляем её
+                    if (switchError.code === 4902) {
+                        try {
+                            await window.ethereum.request({
+                                method: 'wallet_addEthereumChain',
+                                params: [SEPOLIA_CONFIG],
+                            });
+                            console.log('Sepolia network added');
+                            return true;
+                        } catch (addError) {
+                            console.error('Error adding Sepolia network:', addError);
+                            return false;
+                        }
+                    }
+                    console.error('Error switching to Sepolia:', switchError);
+                    return false;
+                }
+            },
+
+            // Функция для подключения к MetaMask с проверкой сети Sepolia
+            connectToMetaMaskSepolia: async function() {
+                try {
+                    if (typeof window.ethereum === 'undefined') {
+                        throw new Error('MetaMask is not installed');
+                    }
+
+                    // Проверяем и переключаем на Sepolia
+                    const networkSwitched = await this.switchToSepoliaNetwork();
+                    if (!networkSwitched) {
+                        throw new Error('Failed to switch to Sepolia network');
+                    }
+
+                    // Запрашиваем подключение аккаунтов
+                    const accounts = await window.ethereum.request({
+                        method: 'eth_requestAccounts'
+                    });
+
+                    // Создаем провайдера
+                    const provider = new ethers.BrowserProvider(window.ethereum);
+                    
+                    // Получаем подписанта
+                    const signer = await provider.getSigner();
+                    
+                    // Получаем информацию о сети
+                    const network = await provider.getNetwork();
+                    console.log('Connected to network:', network.name);
+                    console.log('Chain ID:', network.chainId);
+                    console.log('Connected account:', accounts[0]);
+
+                    return { provider, signer, account: accounts[0] };
+                } catch (error) {
+                    console.error('Error connecting to MetaMask on Sepolia:', error);
+                    throw error;
+                }
+            },
+
+        },
+
+        mounted: async function() {
+            let data = await this.connectToMetaMaskSepolia();
+
+            this.provider = data.provider;
+            this.account = {address: data.account, wallet: data.signer}; 
+
+ 
+            this.abi = [
+                "function getBalance() view returns (uint)",
+                "function deposit()",
+                "function withdraw(uint amount)",
+            ];
+            
+            this.contract = new ethers.Contract(this.contract_address, this.abi, this.account.wallet);
+
+
+            this.balance = await this.provider.getBalance(this.account.address);
+            this.trx_count = await this.provider.getTransactionCount(this.account.address);
+            this.contract_balance = await this.contract.getBalance();
+            this.all_contract_balance = await this.provider.getBalance(this.contract_address); 
+        }
+        });
+
+
+    </script>
+  </body>
+</html>

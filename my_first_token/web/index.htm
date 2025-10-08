@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Bootstrap demo</title>
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+  </head>
+  <body>
+
+
+    <div id="app" class="container">
+        <h1>My First Token HardHat Local</h1>
+
+        <div class="row">
+            <div class="col">
+                <form>
+                <div class="mb-3">
+                    <label for="select_account" class="form-label">Account</label>
+                    <select class="form-control" id="select_account" aria-describedby="selectHelp" v-model="account"
+                        v-on:change="updateAccount"
+                    >
+                        <option> -- </option>
+
+                        <option v-for="a in accounts" :key="a.address" :value="a">
+                            {{ a.address }}
+                        </option>
+                    </select>
+                    <div id="selectHelp" class="form-text">Select account to use</div>
+                </div>
+
+                </form>
+            </div>            
+        </div>
+
+        <div class="row mb-3">
+            <div class="col">
+                Account Balance: {{ formatBalanceSimple(this.balance) }}
+            </div>
+            <div class="col">
+                Account Transactions: {{ this.trx_count }}
+            </div>  
+            <div class="col">
+            </div>            
+        </div>
+
+        <div class="row mb-3">
+            <div class="col">
+                Token total supply: {{ this.total_supply }}
+            </div>
+            <div class="col">
+                Token account supply: {{ this.account_supply }}
+            </div>  
+            <div class="col">
+
+            </div>            
+        </div>
+
+
+       
+  </div>
+
+    </div>
+
+    <script src="/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
+
+
+    <script type="module">
+        import { ethers } from "https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.min.js";
+        import { hardhat_accounts, activateWallets } from "/js/hardhat_accounts.js";
+
+        let app = new Vue({
+        el: '#app',
+        data: {
+            account: null,
+            balance: null,
+            trx_count: null,
+            provider: null,
+            abi: null,
+            contract: null,
+            contract_address: "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+            total_supply: null,
+            account_supply: null,
+            url: 'http://localhost:8545',
+            accounts: [],
+        },
+
+        methods: {
+            updateAccount: async function() {
+                this.balance = null;
+                this.trx_count = null;
+
+                this.refreshAccount();
+            },
+
+            refreshAccount: async function() {
+
+                if (this.account.address) {
+
+                    this.balance = await this.provider.getBalance(this.account.address);
+                    this.trx_count = await this.provider.getTransactionCount(this.account.address);
+                    
+                    this.contract = new ethers.Contract(this.contract_address, this.abi, this.account.wallet);
+
+                    this.total_supply = await this.contract.getTotalSupply();
+
+                    this.account_supply = await this.contract.balanceOf(this.account.address); 
+                }
+            },
+
+            transfer: async function() {
+                try {
+                    let val = this.calc_wei(this.amount_deposit, this.amount_deposit_coeff);
+                    await this.contract.deposit({value: val});
+                    this.refreshAccount();
+                } catch(e) {
+                    console.log(e.message);
+                    alert('Error');
+                }  
+            },
+
+            approve: async function() {
+
+            },
+
+            transferFrom: async function() {
+
+            },
+
+            adminMint: async function() {
+
+            },
+
+            adminBurn: async function() {
+
+            },
+
+            formatBalanceSimple: function (weiBalance) {
+                if (weiBalance == undefined || weiBalance == null) {
+                    return '0';
+                }    
+
+                const ethBalance = parseFloat(ethers.formatEther(weiBalance));
+                
+                if (ethBalance >= 0.001) {
+                    return `${ethBalance.toFixed(6).replace(/\.?0+$/, '')} ETH`;
+                } else {
+                    const gweiBalance = parseFloat(ethers.formatUnits(weiBalance, "gwei"));
+                    if (gweiBalance >= 0.1) {
+                        return `${gweiBalance.toFixed(3).replace(/\.?0+$/, '')} Gwei`;
+                    } else {
+                        return `${BigInt(weiBalance).toLocaleString()} Wei`;
+                    }
+                }
+            },
+
+            calc_wei: function(amount, coeff) {
+                if (coeff == 'wei') {
+                    return BigInt(amount);
+                }
+                if (coeff == 'gwei') {
+                    return BigInt(amount * 1000000000);
+                }
+                if (coeff == 'ether') {
+                    return BigInt(amount * 1000000000000000000);
+                }
+                return '-1';                
+            }
+        },
+
+        mounted: async function() {
+            this.provider = new ethers.JsonRpcProvider(this.url);
+
+            activateWallets(hardhat_accounts, ethers, this.provider);
+            this.accounts = hardhat_accounts;
+  
+            this.abi = [
+                "function balanceOf(address) view returns (uint)",
+                "function getTotalSupply() view returns (uint)",
+                "function getIsAdmin() view returns (bool)",
+            ];
+
+        }
+        });
+
+
+    </script>
+  </body>
+</html>

@@ -1,0 +1,39 @@
+{
+  "_format": "hh3-sol-build-info-1",
+  "id": "solc-0_8_28-bcaeca0de58d22c73f7a952e33352f5ff9ab03c4",
+  "solcVersion": "0.8.28",
+  "solcLongVersion": "0.8.28+commit.7893614a",
+  "userSourceNameMap": {
+    "contracts/SimpleBank.sol": "project/contracts/SimpleBank.sol"
+  },
+  "input": {
+    "language": "Solidity",
+    "settings": {
+      "evmVersion": "cancun",
+      "optimizer": {
+        "enabled": true,
+        "runs": 200
+      },
+      "outputSelection": {
+        "*": {
+          "": [
+            "ast"
+          ],
+          "*": [
+            "abi",
+            "evm.bytecode",
+            "evm.deployedBytecode",
+            "evm.methodIdentifiers",
+            "metadata"
+          ]
+        }
+      },
+      "remappings": []
+    },
+    "sources": {
+      "project/contracts/SimpleBank.sol": {
+        "content": "//SPDX-License-Identifier: MIT\r\npragma solidity ^0.8.28;\r\n\r\n\r\ncontract SimpleBank {\r\n\r\n    mapping(address account => uint amount) accounts;\r\n\r\n    event Deposited(address indexed account, uint amount);\r\n    event Withdrawn(address indexed account, uint amount);\r\n\r\n    constructor() {\r\n\r\n    }\r\n\r\n    function deposit() external payable {\r\n        require(msg.sender != address(0), \"Require non zero address\");\r\n        require(msg.value > 0, \"Require non zero amount\");\r\n\r\n        accounts[msg.sender] += msg.value;\r\n\r\n        emit Deposited(msg.sender, msg.value);\r\n    }\r\n\r\n    function withdraw(uint amount) external {\r\n        require(msg.sender != address(0), \"Require non zero address\");\r\n        require(amount > 0, \"Require non zero amount\");\r\n        require(accounts[msg.sender] >= amount, \"Not enough balance\");\r\n\r\n        accounts[msg.sender] -= amount;\r\n\r\n        (bool success, ) = payable(msg.sender).call{value: amount}(\"\");        \r\n        require(success, \"Transfer failed\");\r\n\r\n        emit Withdrawn(msg.sender, amount);\r\n    }\r\n\r\n    function getBalance() external view returns (uint) {\r\n        return accounts[msg.sender];\r\n    }\r\n\r\n}\r\n"
+      }
+    }
+  }
+}
