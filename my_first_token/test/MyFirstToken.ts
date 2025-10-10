@@ -79,7 +79,7 @@ describe("Myfirst token", function () {
 
 
 
-    it("erc 20 approve", async function() {
+    it("Erc 20 approve", async function() {
         let val = ethers.parseEther("1");
         await mft.adminMint(user1, val);
 
@@ -116,7 +116,7 @@ describe("Myfirst token", function () {
 
 
 
-   it("test event Approval", async function() {
+   it("Test event Approval", async function() {
         let val = ethers.parseEther("1");
         await mft.adminMint(user1, val);
 

@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Bootstrap demo</title>
+    <title>My First Token HardHat Local</title>
     <link href="/css/bootstrap.min.css" rel="stylesheet">
   </head>
   <body>
@@ -43,7 +43,17 @@
             <div class="col">
             </div>            
         </div>
-
+        <div class="row mb-3">
+            <div class="col">
+                Token name: {{ this.name }}
+            </div>
+            <div class="col">
+                Token symbol: {{ this.symbol }}
+            </div>  
+            <div class="col">
+                Token decimals: {{ this.decimals }}
+            </div>            
+        </div>
         <div class="row mb-3">
             <div class="col">
                 Token total supply: {{ this.total_supply }}
@@ -52,12 +62,380 @@
                 Token account supply: {{ this.account_supply }}
             </div>  
             <div class="col">
+                Is admin: {{ this.is_admin ? 'Yes' : 'No' }}
+            </div>            
+        </div>
 
+        <hr class="bg-danger border-2 border-top border-danger w-50 mx-auto" />
+
+        <div class="row mt-3 mb-3 bg-light" v-if="is_admin">
+            <div class="col">
+                <h1>Admin</h1>
+            </div>            
+            <div class="col">
+                 
+            </div>
+            <div class="col">
+          
+            </div>  
+            <div class="col">
+
+            </div>            
+        </div>
+        <div class="row mt-3 mb-3 bg-light" v-if="is_admin">
+            <div class="col">
+                <label for="admin_mint_account" class="form-label">Address to mint: </label>                
+            </div>            
+            <div class="col">
+                 <label for="admin_mint_amount" class="form-label">Amount to mint: </label> 
+            </div>
+            <div class="col">
+          
+            </div>  
+            <div class="col">
+
+            </div>            
+        </div>
+        <div class="row mb-3 bg-light" v-if="is_admin">
+            <div class="col">
+                    <select class="form-control" id="admin_mint_account" aria-describedby="selectHelp" v-model="admin_mint_account" >
+                        <option> -- </option>
+
+                        <option v-for="a in accounts" :key="a.address" :value="a">
+                            {{ a.address }}
+                        </option>
+                    </select>                
+            </div>            
+            <div class="col">
+                 <input class="form-control" v-model="admin_mint_amount" id="admin_mint_amount"/>
+            </div>
+            <div class="col">
+                 <select class="form-control" v-model="admin_mint_amount_coeff">
+                    <option value="wei">Wei</option>
+                    <option value="gwei">GWei</option>
+                    <option value="ether">Ether</option>
+                 </select>                
+            </div>  
+            <div class="col">
+                <button class="btn btn-primary" v-on:click="adminMint">Admin Mint</button>
+            </div>            
+        </div>
+       
+        <div class="row mb-3" v-if="is_admin">
+            <div class="col">
+                <label for="admin_burn_account" class="form-label">Address to burn: </label>                
+            </div>            
+            <div class="col">
+                 <label for="admin_burn_amount" class="form-label">Amount to burn: </label> 
+            </div>
+            <div class="col">
+          
+            </div>  
+            <div class="col">
+
+            </div>            
+        </div>
+        <div class="row mb-3" v-if="is_admin">
+            <div class="col">
+                    <select class="form-control" id="admin_burn_account" aria-describedby="selectHelp" v-model="admin_burn_account" >
+                        <option> -- </option>
+
+                        <option v-for="a in accounts" :key="a.address" :value="a">
+                            {{ a.address }}
+                        </option>
+                    </select>                
+            </div>            
+            <div class="col">
+                 <input class="form-control" v-model="admin_burn_amount" id="admin_burn_amount"/>
+            </div>
+            <div class="col">
+                 <select class="form-control" v-model="admin_burn_amount_coeff">
+                    <option value="wei">Wei</option>
+                    <option value="gwei">GWei</option>
+                    <option value="ether">Ether</option>
+                 </select>                
+            </div>  
+            <div class="col">
+                <button class="btn btn-primary" v-on:click="adminBurn">Admin Burn</button>
+            </div>            
+        </div>
+        
+        
+        <div class="row mt-3 mb-3 bg-light" v-if="account_supply > 0">
+            <div class="col">
+                <h1>Transfer</h1>
+            </div>            
+            <div class="col">
+                 
+            </div>
+            <div class="col">
+          
+            </div>  
+            <div class="col">
+
+            </div>            
+        </div>
+        <div class="row mb-3" v-if="account_supply > 0">
+            <div class="col">
+                <label for="transfer_account" class="form-label">Address to transfer: </label>                
+            </div>            
+            <div class="col">
+                 <label for="transfer_amount" class="form-label">Amount to transfer: </label> 
+            </div>
+            <div class="col">
+          
+            </div>  
+            <div class="col">
+
+            </div>            
+        </div>
+        <div class="row mb-3" v-if="account_supply > 0">
+            <div class="col">
+                    <select class="form-control" id="transfer_account" aria-describedby="selectHelp" v-model="transfer_account" >
+                        <option> -- </option>
+
+                        <option v-for="a in accounts" :key="a.address" :value="a">
+                            {{ a.address }}
+                        </option>
+                    </select>                
+            </div>            
+            <div class="col">
+                 <input class="form-control" v-model="transfer_amount" id="transfer_amount"/>
+            </div>
+            <div class="col">
+                 <select class="form-control" v-model="transfer_amount_coeff">
+                    <option value="wei">Wei</option>
+                    <option value="gwei">GWei</option>
+                    <option value="ether">Ether</option>
+                 </select>                
+            </div>  
+            <div class="col">
+                <button class="btn btn-primary" v-on:click="transfer">Transfer</button>
             </div>            
         </div>
 
 
-       
+        <div class="row mt-3 mb-3 bg-light" v-if="account_supply > 0">
+            <div class="col">
+                <h1>Approve</h1>
+            </div>            
+            <div class="col">
+                 
+            </div>
+            <div class="col">
+          
+            </div>  
+            <div class="col">
+
+            </div>            
+        </div>
+        <div class="row mb-3" v-if="account_supply > 0">
+            <div class="col">
+                <label for="approve_account" class="form-label">Address to approve: </label>                
+            </div>            
+            <div class="col">
+                 <label for="approve_amount" class="form-label">Amount to approve: </label> 
+            </div>
+            <div class="col">
+          
+            </div>  
+            <div class="col">
+
+            </div>            
+        </div>
+        <div class="row mb-3" v-if="account_supply > 0">
+            <div class="col">
+                    <select class="form-control" id="approve_account" aria-describedby="selectHelp" v-model="approve_account" >
+                        <option> -- </option>
+
+                        <option v-for="a in accounts" :key="a.address" :value="a">
+                            {{ a.address }}
+                        </option>
+                    </select>                
+            </div>            
+            <div class="col">
+                 <input class="form-control" v-model="approve_amount" id="approve_amount"/>
+            </div>
+            <div class="col">
+                 <select class="form-control" v-model="approve_amount_coeff">
+                    <option value="wei">Wei</option>
+                    <option value="gwei">GWei</option>
+                    <option value="ether">Ether</option>
+                 </select>                
+            </div>  
+            <div class="col">
+                <button class="btn btn-primary" v-on:click="approve">Approve</button>
+            </div>            
+        </div>
+        
+        <div class="row mt-3 mb-3 bg-light" v-if="account_supply > 0">
+            <div class="col">
+                <h1>Allowance</h1>
+            </div>            
+            <div class="col">
+                 
+            </div>
+            <div class="col">
+          
+            </div>  
+            <div class="col">
+
+            </div>            
+        </div>        
+        <div class="row mb-3" v-if="account">
+            <div class="col">
+                <label for="allowance_owner" class="form-label">Allowance owner: </label>                
+            </div> 
+            <div class="col">
+                <label for="allowance_spender" class="form-label">Allowance spender: </label>                
+            </div>            
+            <div class="col">
+                 <label class="form-label">Allowance amount: </label> 
+            </div>
+            <div class="col">
+
+            </div>            
+        </div>
+        <div class="row mb-3" v-if="account">
+            <div class="col">
+                    <select class="form-control" id="allowance_owner" aria-describedby="selectHelp" v-model="allowance_owner" >
+                        <option> -- </option>
+
+                        <option v-for="a in accounts" :key="a.address" :value="a">
+                            {{ a.address }}
+                        </option>
+                    </select>                
+            </div>            
+            <div class="col">
+                    <select class="form-control" id="allowance_spender" aria-describedby="selectHelp" v-model="allowance_spender" >
+                        <option> -- </option>
+
+                        <option v-for="a in accounts" :key="a.address" :value="a">
+                            {{ a.address }}
+                        </option>
+                    </select>                
+            </div>            
+            <div class="col">
+                 {{ allowance_amount }}
+            </div>
+            <div class="col">
+                <button class="btn btn-primary" v-on:click="allowance">Get Allowance</button>
+            </div>            
+        </div>
+        
+        
+        <div class="row mt-3 mb-3 bg-light" v-if="account">
+            <div class="col">
+                <h1>Transfer from</h1>
+            </div>            
+            <div class="col">
+                 
+            </div>
+            <div class="col">
+          
+            </div>  
+            <div class="col">
+
+            </div>            
+        </div>
+        <div class="row mb-3" v-if="account">
+            <div class="col">
+                <label for="transferFrom_from" class="form-label">Transfer from: </label>                
+            </div>            
+            <div class="col">
+                 <label for="transferFrom_to" class="form-label">Transfer to: </label>  
+            </div>
+            <div class="col">
+                <label for="transferFrom_amount" class="form-label">Transfer amount: </label> 
+            </div>
+            <div class="col">
+          
+            </div>   
+            <div class="col">
+          
+            </div>                       
+        </div>
+        <div class="row mb-3" v-if="account">
+            <div class="col">
+                    <select class="form-control" id="transferFrom_from" aria-describedby="selectHelp" v-model="transferFrom_from" >
+                        <option> -- </option>
+
+                        <option v-for="a in accounts" :key="a.address" :value="a">
+                            {{ a.address }}
+                        </option>
+                    </select>                
+            </div>    
+            <div class="col">
+                    <select class="form-control" id="transferFrom_to" aria-describedby="selectHelp" v-model="transferFrom_to" >
+                        <option> -- </option>
+
+                        <option v-for="a in accounts" :key="a.address" :value="a">
+                            {{ a.address }}
+                        </option>
+                    </select>                
+            </div>                      
+            <div class="col">
+                 <input class="form-control" v-model="transferFrom_amount" id="transferFrom_amount"/>
+            </div>
+            <div class="col">
+                 <select class="form-control" v-model="transferFrom_amount_coeff">
+                    <option value="wei">Wei</option>
+                    <option value="gwei">GWei</option>
+                    <option value="ether">Ether</option>
+                 </select>                
+            </div>  
+            <div class="col">
+                <button class="btn btn-primary" v-on:click="transferFrom">Transfer From</button>
+            </div>            
+        </div>
+
+        <hr class="bg-danger border-2 border-top border-danger w-50 mx-auto" />
+        
+        <div class="row" v-if="transferFromEvents ? transferFromEvents.length : 0">
+            <div class="col">
+                <h2>Transfer From account</h2>
+            </div>
+        </div>
+        <div class="row mb-3 overflow-auto" v-for="e in transferFromEvents" >
+            <div class="col">
+                To {{ e.args[1] }} Amount {{ e.args[2] }} Block Number: {{ e.blockNumber }}
+            </div>  
+        </div>
+        
+        <div class="row" v-if="transferToEvents ? transferToEvents.length : 0">
+            <div class="col">
+                <h2>Transfer To account</h2>
+            </div>
+        </div>
+        <div class="row mb-3 overflow-auto" v-for="e in transferToEvents" >
+            <div class="col">
+                From {{ e.args[0] }} Amount {{ e.args[2] }} Block Number: {{ e.blockNumber }}
+            </div>  
+        </div>
+
+
+        <div class="row" v-if="approvalFromEvents ? approvalFromEvents.length : 0">
+            <div class="col">
+                <h2>Approval From account</h2>
+            </div>
+        </div>        
+        <div class="row mb-3 overflow-auto" v-for="e in approvalFromEvents" >
+            <div class="col">
+                To {{ e.args[1] }} Amount {{ e.args[2] }} Block Number: {{ e.blockNumber }}
+            </div>  
+        </div>
+
+
+        <div class="row" v-if="approvalToEvents ? approvalToEvents.length : 0">
+            <div class="col">
+                <h2>Approval To account</h2>
+            </div>
+        </div>        
+        <div class="row mb-3 overflow-auto" v-for="e in approvalToEvents" >
+            <div class="col">
+                From {{ e.args[0] }} Amount {{ e.args[2] }} Block Number: {{ e.blockNumber }}
+            </div>  
+        </div>        
   </div>
 
     </div>
@@ -67,6 +445,10 @@
 
 
     <script type="module">
+        BigInt.prototype.toJSON = function() {
+        return this.toString();
+        };
+
         import { ethers } from "https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.min.js";
         import { hardhat_accounts, activateWallets } from "/js/hardhat_accounts.js";
 
@@ -77,11 +459,46 @@
             balance: null,
             trx_count: null,
             provider: null,
+            name: null,
+            symbol: null,
+            decimals: null,
             abi: null,
             contract: null,
             contract_address: "0x5FbDB2315678afecb367f032d93F642f64180aa3",
             total_supply: null,
             account_supply: null,
+            is_admin: null,
+
+            admin_mint_account: null,
+            admin_mint_amount: null,
+            admin_mint_amount_coeff: null,
+
+            admin_burn_account: null,
+            admin_burn_amount: null,
+            admin_burn_amount_coeff: null,
+
+            transfer_account: null,
+            transfer_amount: null,
+            transfer_amount_coeff: null,
+
+            approve_account: null,
+            approve_amount: null,
+            approve_amount_coeff: null, 
+            
+            allowance_owner: null,
+            allowance_spender: null,
+            allowance_amount: null,
+
+            transferFrom_from: null,
+            transferFrom_to: null,
+            transferFrom_amount: null,
+            transferFrom_amount_coeff: null, 
+
+            transferFromEvents: null,
+            transferToEvents: null,
+            approvalFromEvents: null,
+            approvalToEvents: null,
+
             url: 'http://localhost:8545',
             accounts: [],
         },
@@ -106,14 +523,33 @@
                     this.total_supply = await this.contract.getTotalSupply();
 
                     this.account_supply = await this.contract.balanceOf(this.account.address); 
+
+                    this.is_admin = await this.contract.getIsAdmin(); 
+
+                    this.name  = await this.contract.getName();
+                    this.symbol  = await this.contract.getSymbol();
+                    this.decimals  = await this.contract.getDecimals();
+
+                    let filterTransfer = this.contract.filters.Transfer(this.account.address);
+                    this.transferFromEvents = await this.contract.queryFilter(filterTransfer, -10);
+
+                    let filterTransfer1 = this.contract.filters.Transfer(null, this.account.address);
+                    this.transferToEvents = await this.contract.queryFilter(filterTransfer1, -10);
+
+                    let filterApproval = this.contract.filters.Approval(this.account.address);
+                    this.approvalFromEvents = await this.contract.queryFilter(filterApproval, -10);
+
+                    let filterApproval1 = this.contract.filters.Approval(null, this.account.address);
+                    this.approvalToEvents = await this.contract.queryFilter(filterApproval1, -10);                   
+
                 }
             },
 
             transfer: async function() {
                 try {
-                    let val = this.calc_wei(this.amount_deposit, this.amount_deposit_coeff);
-                    await this.contract.deposit({value: val});
-                    this.refreshAccount();
+                   let val = this.calc_wei(this.transfer_amount, this.transfer_amount_coeff);
+                   await this.contract.transfer(this.transfer_account.address, val);
+                   this.refreshAccount();
                 } catch(e) {
                     console.log(e.message);
                     alert('Error');
@@ -121,19 +557,56 @@
             },
 
             approve: async function() {
-
+                try {
+                   let val = this.calc_wei(this.approve_amount, this.approve_amount_coeff);
+                   await this.contract.approve(this.approve_account.address, val);
+                   this.refreshAccount();
+                } catch(e) {
+                    console.log(e.message);
+                    alert('Error');
+                }
             },
 
             transferFrom: async function() {
+                try {
+                    let val = this.calc_wei(this.transferFrom_amount, this.transferFrom_amount_coeff);
+                    await this.contract.transferFrom(this.transferFrom_from.address, this.transferFrom_to.address, val);
+                    this.refreshAccount();
+                } catch(e) {
+                    console.log(e.message);
+                    alert('Error');
+                }
+            },
 
+            allowance: async function() {
+                try {
+                    this.allowance_amount = await this.contract.allowance(this.allowance_owner.address, this.allowance_spender.address);
+                } catch(e) {
+                    console.log(e.message);
+                    alert('Error');
+                }
             },
 
             adminMint: async function() {
-
+                try {
+                   let val = this.calc_wei(this.admin_mint_amount, this.admin_mint_amount_coeff);
+                   await this.contract.adminMint(this.admin_mint_account.address, val);
+                   this.refreshAccount();
+                } catch(e) {
+                    console.log(e.message);
+                    alert('Error');
+                } 
             },
 
             adminBurn: async function() {
-
+                try {
+                   let val = this.calc_wei(this.admin_burn_amount, this.admin_burn_amount_coeff);
+                   await this.contract.adminBurn(this.admin_burn_account.address, val);
+                   this.refreshAccount();
+                } catch(e) {
+                    console.log(e.message);
+                    alert('Error');
+                } 
             },
 
             formatBalanceSimple: function (weiBalance) {
@@ -166,7 +639,8 @@
                     return BigInt(amount * 1000000000000000000);
                 }
                 return '-1';                
-            }
+            },
+            
         },
 
         mounted: async function() {
@@ -176,9 +650,22 @@
             this.accounts = hardhat_accounts;
   
             this.abi = [
-                "function balanceOf(address) view returns (uint)",
-                "function getTotalSupply() view returns (uint)",
+                "function balanceOf(address) view returns (uint256)",
+                "function getTotalSupply() view returns (uint256)",
                 "function getIsAdmin() view returns (bool)",
+                "function adminMint(address,uint256) returns (bool)",
+                "function adminBurn(address,uint256) returns (bool)",
+                "function transfer(address,uint256) returns (bool)",
+                "function approve(address,uint256) returns (bool)",
+                "function transferFrom(address,address,uint256) returns (bool)",
+                "function allowance(address,address) view returns (uint256)",
+                "event Transfer(address indexed from, address indexed to, uint value)",
+                "event Approval(address indexed owner, address indexed spender, uint value)",
+
+                "function getName() view returns (string)",
+                "function getSymbol() view returns (string)",
+                "function getDecimals() view returns (uint256)",
+
             ];
 
         }

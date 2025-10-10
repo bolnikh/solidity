@@ -2,3 +2,8 @@
 
 Два режима - локальная сеть hardhat и sepolia
 
+
+web server
+
+npx http-server
+

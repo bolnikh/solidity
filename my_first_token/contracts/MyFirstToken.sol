@@ -80,7 +80,7 @@ contract MyFirstToken
         return true;  
     }
 
-    function allowance(address _owner, address _spender) public view returns (uint256 remaining) 
+    function allowance(address _owner, address _spender) public view returns (uint256) 
     {
         return allow[_owner][_spender];
     }
@@ -100,8 +100,28 @@ contract MyFirstToken
         return true;        
     }
 
-    function getTotalSupply() external view returns (uint256 remaining) 
+    function getTotalSupply() external view returns (uint256) 
     {
         return totalSupply;
     }
+
+    function getIsAdmin() external view returns (bool) 
+    {
+        return msg.sender == admin;
+    }
+
+    function getName() external view returns (string memory) 
+    {
+        return name;
+    }
+
+    function getSymbol() external view returns (string memory) 
+    {
+        return symbol;
+    }
+
+    function getDecimals() external view returns (uint256) 
+    {
+        return decimals;
+    }        
 }
