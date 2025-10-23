@@ -1,0 +1,433 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ICO HardHat Local</title>
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+  </head>
+  <body>
+
+
+    <div id="app" class="container">
+        <h1>ICO HardHat Local</h1>
+
+        <div class="row">
+            <div class="col">
+                <form>
+                <div class="mb-3">
+                    <label for="select_account" class="form-label">Account</label>
+                    <select class="form-control" id="select_account" aria-describedby="selectHelp" v-model="account"
+                        v-on:change="updateAccount"
+                    >
+                        <option> -- </option>
+
+                        <option v-for="a in accounts" :key="a.address" :value="a">
+                            {{ a.address }}
+                        </option>
+                    </select>
+                    <div id="selectHelp" class="form-text">Select account to use</div>
+                </div>
+
+                </form>
+            </div>            
+        </div>
+
+        <div class="row mb-3">
+            <div class="col">
+                Account Balance: {{ formatBalanceSimple(this.balance) }}
+            </div>
+            <div class="col">
+                Account Transactions: {{ this.trx_count }}
+            </div>  
+            <div class="col">
+            </div>            
+        </div>
+        <div class="row mb-3">
+            <div class="col">
+                
+            </div>
+            <div class="col">
+                
+            </div>  
+            <div class="col">
+            </div>            
+        </div>
+
+
+
+
+        <hr class="bg-danger border-2 border-top border-danger w-50 mx-auto" />
+
+        <div class="row mt-3 mb-3 bg-light" v-if="!contracts_deployed && (account ? account.address : null)">
+            <div class="col">
+                <h1>ICO contracts deploy</h1>
+            </div>                      
+        </div>
+        <div class="row mt-3 " v-if="!contracts_deployed && (account ? account.address : null)">
+            <div class="col">
+                <label for="deploy_token_name" class="form-label">Token name: </label> 
+                <input type="text" v-model="deploy_token_name" class="form-control" id="deploy_token_name">
+
+                <label for="deploy_token_symbol" class="form-label">Token symbol: </label> 
+                <input type="text" v-model="deploy_token_symbol" class="form-control" id="deploy_token_symbol">
+
+                <label for="deploy_token_price" class="form-label">Token price ether: </label> 
+                <input type="text" v-model="deploy_token_price" class="form-control" id="deploy_token_price">
+
+                <label for="deploy_ico_start_after" class="form-label">ICO start after sec: </label> 
+                <input type="text" v-model="deploy_ico_start_after" class="form-control" id="deploy_ico_start_after">
+
+                <label for="deploy_ico_stop_after" class="form-label">ICO stop after sec: </label> 
+                <input type="text" v-model="deploy_ico_stop_after" class="form-control" id="deploy_ico_stop_after">
+                
+                <label for="deploy_ico_soft_cap" class="form-label">ICO soft cap ethers: </label> 
+                <input type="text" v-model="deploy_ico_soft_cap" class="form-control" id="deploy_ico_soft_cap">   
+                
+                <label for="deploy_ico_hard_cap" class="form-label">ICO hard cap ethers: </label> 
+                <input type="text" v-model="deploy_ico_hard_cap" class="form-control" id="deploy_ico_hard_cap">   
+                
+                <button class="btn btn-primary" v-on:click="deployContracts">Deploy Contracts</button>
+
+            </div>                      
+        </div>
+        <div class="row mt-3 mb-3 bg-light" v-if="contracts_deployed">
+            <div class="col">
+                <h1>ICO contract deployed</h1>
+            </div>                      
+        </div>
+        <div class="row mt-3 mb-3 bg-light" v-if="contracts_deployed">
+            <div class="col">
+                ICO contract address: {{ contract_ICO_address }} <br/>
+                ICO token price: {{ deploy_token_price }} <br/>
+                ICO soft cap: {{ deploy_ico_soft_cap }} <br/>
+                ICO hard cap: {{ deploy_ico_hard_cap }} <br/>
+                ICO started: {{ is_ICO_started }} <br/>
+                ICO in progress: {{ is_ICO_in_progress }} <br/>
+                ICO failed: {{ is_ICO_failed }} <br/>
+                ICO funded: {{ formatBalanceSimple(ICO_funded) }} <br/>
+                ICO is Owner: {{ is_ICO_owner }} <br/>
+
+                <hr>
+
+                Token contract address: {{ contract_token_address }} <br/>
+                Token name: {{ deploy_token_name }} <br/>
+                Token symbol: {{ deploy_token_symbol }} <br/>
+                Token Account Supply: {{ token_account_supply }} <br/>
+                
+                <hr>
+
+                Currect time: {{ current_time }} <br/>
+                Currect block number: {{ currect_block_number }} <br/>
+                Currect block time: {{ current_block_time }} <br/>
+
+
+
+                <button class="btn btn-primary" v-on:click="refreshContractsData">Refresh Contracts Data</button>
+            </div>                      
+        </div>
+       
+
+        <div class="row mt-3 mb-3 bg-light" v-if="contracts_deployed">
+            <div class="col">
+                <h1>Buy tokens</h1>
+            </div>                      
+        </div>
+        <div class="row mt-3 mb-3 " v-if="contracts_deployed">
+            <div class="col">
+                <label for="buy_amount" class="form-label">Amount: </label>                
+            </div>            
+            <div class="col">
+                 <input class="form-control" v-model="buy_amount" id="buy_amount"/>
+            </div>
+            <div class="col">
+                <select class="form-control" v-model="buy_amount_coeff">
+                    <option value="wei">Wei</option>
+                    <option value="gwei">GWei</option>
+                    <option value="ether">Ether</option>
+                 </select>
+            </div>  
+            <div class="col">
+                <button class="btn btn-primary" v-on:click="buyTokens">Buy Tokens</button>
+            </div>                      
+        </div> 
+        
+        <div class="row mt-3 mb-3 bg-light" v-if="contracts_deployed && is_ICO_owner && is_ICO_started && !is_ICO_in_progress && !is_ICO_failed">
+            <div class="col">
+                <h1>Withdraw funds</h1>
+            </div>
+            <div class="col">
+                <button class="btn btn-primary" v-on:click="withdrawFunds">Withdraw funds</button>
+            </div>                                  
+        </div>
+        <div class="row mt-3 mb-3 bg-light" v-if="contracts_deployed && !is_ICO_owner && is_ICO_started && !is_ICO_in_progress && is_ICO_failed">
+            <div class="col">
+                <h1>Get funds back on ICO fail</h1>
+            </div>
+            <div class="col">
+                <button class="btn btn-primary" v-on:click="getFundsBackOnICOFail">Get funds back</button>
+            </div>                                  
+        </div>
+
+
+  </div>
+
+    </div>
+
+    <script src="/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
+
+
+    <script type="module">
+        BigInt.prototype.toJSON = function() {
+        return this.toString();
+        };
+
+        import { ethers } from "https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.min.js";
+        import { hardhat_accounts, activateWallets } from "/js/hardhat_accounts.js";
+        import { ICObytecode, ICO_ABI } from "/js/bytecode.js";
+
+        let app = new Vue({
+        el: '#app',
+        data: {
+            account: null,
+            balance: null,
+            trx_count: null,
+            provider: null,
+
+            abiToken: null,
+            abiICO: null,
+
+            contracts_deployed: false,
+
+            contract_token: null,
+            contract_token_address: "",
+
+            contract_ICO: null,
+            contract_ICO_address: "",            
+
+            token_account_supply: null,
+            is_ICO_owner: null,
+
+            url: 'http://localhost:8545',
+            accounts: [],
+
+            contracts_deployed: false,
+
+            deploy_token_name: 'My Token',
+            deploy_token_symbol: 'MT',
+            deploy_token_price: "0.001",
+            deploy_ico_start_after: 15,
+            deploy_ico_stop_after: 180,
+            deploy_ico_soft_cap: "0.1",
+            deploy_ico_hard_cap: "1",
+
+            current_time: null,
+            current_block_time: null,
+
+            is_ICO_started: false,
+            is_ICO_in_progress: false,
+            is_ICO_failed: false,
+            ICO_funded: 0,
+
+            buy_amount: 0,
+            buy_amount_coeff: 'wei',
+        },
+
+        methods: {
+            updateAccount: async function() {
+                this.balance = null;
+                this.trx_count = null;
+                
+                this.swichContactToNewAccount();
+                this.refreshContractsData();
+            },
+
+            deployContracts: async function() {
+
+                const ICOFactory = new ethers.ContractFactory(ICO_ABI, ICObytecode, this.account.wallet);
+
+                const ico = await ICOFactory.deploy(
+                    ethers.parseEther(this.deploy_token_price), 
+                    ethers.parseEther(this.deploy_ico_soft_cap), 
+                    ethers.parseEther(this.deploy_ico_hard_cap), 
+                    Math.floor(Date.now() / 1000) + this.deploy_ico_start_after,
+                    Math.floor(Date.now() / 1000) + this.deploy_ico_stop_after
+                );
+                
+                await ico.waitForDeployment();
+ 
+                this.contract_ICO = ico;
+                this.contract_ICO_address = await ico.getAddress();
+
+                const tx = await ico.deployToken(this.deploy_token_name, deploy_token_symbol);
+                await tx.wait();
+
+                const tokenAddress = await ico.getToken();
+
+                this.contract_token = new ethers.Contract(tokenAddress, this.abiToken, this.provider);
+                this.contract_token_address = tokenAddress;
+
+                this.contracts_deployed = true;
+
+
+            },
+
+            swichContactToNewAccount: async function() {
+                if (this.account && this.contract_ICO) {
+                    this.contract_ICO = new ethers.Contract(this.contract_ICO_address, ICO_ABI, this.account.wallet);
+                }
+            },
+
+            refreshContractsData: async function() {
+                if (this.provider) {
+                    await this.provider.send("evm_mine");
+
+                    this.current_time = Math.floor(Date.now() / 1000);
+                    const latestBlockNumber = await this.provider.getBlockNumber();
+                    this.currect_block_number = latestBlockNumber;
+                    const block = await this.provider.getBlock(latestBlockNumber);
+                    this. current_block_time = block.timestamp;
+
+                    if (this.account) {
+                        this.balance = await this.provider.getBalance(this.account.address);
+                        this.trx_count = await this.provider.getTransactionCount(this.account.address);
+
+                        if (this.contract_ICO) {
+                            this.token_account_supply = await this.contract_token.balanceOf(this.account.address);
+                            this.is_ICO_owner = await this.contract_ICO.getIsOwner();     
+                                
+                            this.is_ICO_started = await this.contract_ICO.getICOStarted();
+                            this.is_ICO_in_progress = await this.contract_ICO.getInProgress();
+                            this.is_ICO_failed = await this.contract_ICO.getICOFailed();
+                        }
+
+                        this.ICO_funded = this.contract_ICO_address ? await this.provider.getBalance(this.contract_ICO_address) : 0;
+                    } else {
+                        this.balance = 0;
+                        this.trx_count = 0;
+
+                        this.token_account_supply = 0;
+                        this.is_ICO_owner = false;
+                        this.is_ICO_started = false;
+                        this.is_ICO_in_progress = false;
+                        this.is_ICO_failed = false;
+                        this.ICO_funded = 0;
+                    }
+                }
+            },
+
+            buyTokens: async function() {
+                if (this.buy_amount <= 0) {
+                    alert('Set amount to buy');
+                    return;
+                }
+
+                try {
+                    let val = this.calc_wei(this.buy_amount, this.buy_amount_coeff);
+                    await this.contract_ICO.buyTokens({value: val});
+                    this.refreshContractsData();
+                } catch(e) {
+                    console.log(e.message);
+                    alert('Error');
+                }
+
+            },
+
+            getFundsBackOnICOFail: async function() {
+                try {
+                    await this.contract_ICO.getFundsBackOnICOFail();
+                    this.refreshContractsData();
+                } catch(e) {
+                    console.log(e.message);
+                    alert('Error');
+                }
+            },            
+
+            withdrawFunds: async function() {             
+                try {
+                    await this.contract_ICO.withdrawFunds();
+                    this.refreshContractsData();
+                } catch(e) {
+                    console.log(e.message);
+                    alert('Error');
+                }
+            },
+
+            formatBalanceSimple: function (weiBalance) {
+                if (weiBalance == undefined || weiBalance == null) {
+                    return '0';
+                }    
+
+                const ethBalance = parseFloat(ethers.formatEther(weiBalance));
+                
+                if (ethBalance >= 0.001) {
+                    return `${ethBalance.toFixed(6).replace(/\.?0+$/, '')} ETH`;
+                } else {
+                    const gweiBalance = parseFloat(ethers.formatUnits(weiBalance, "gwei"));
+                    if (gweiBalance >= 0.1) {
+                        return `${gweiBalance.toFixed(3).replace(/\.?0+$/, '')} Gwei`;
+                    } else {
+                        return `${BigInt(weiBalance).toLocaleString()} Wei`;
+                    }
+                }
+            },
+
+            calc_wei: function(amount, coeff) {
+                if (coeff == 'wei') {
+                    return BigInt(amount);
+                }
+                if (coeff == 'gwei') {
+                    return BigInt(amount * 1000000000);
+                }
+                if (coeff == 'ether') {
+                    return BigInt(amount * 1000000000000000000);
+                }
+                return '-1';                
+            },
+            
+        },
+
+
+        mounted: async function() {
+            this.provider = new ethers.JsonRpcProvider(this.url);
+
+            activateWallets(hardhat_accounts, ethers, this.provider);
+            this.accounts = hardhat_accounts;
+  
+            this.abiToken = [
+                "function balanceOf(address) view returns (uint256)",
+
+                "function getName() view returns (string)",
+                "function getSymbol() view returns (string)",
+            ];
+
+            this.abiICO = ICO_ABI;
+
+           
+            this.current_time = Math.floor(Date.now() / 1000);
+            const latestBlockNumber = await this.provider.getBlockNumber();
+            this.currect_block_number = latestBlockNumber;
+            const block = await this.provider.getBlock(latestBlockNumber);
+            this. current_block_time = block.timestamp;
+
+            this.contract_token = null;
+            this.contract_token_address = null;
+
+            this.contract_ICO = null;
+            this.contract_ICO_address = null; 
+                
+            this.token_account_supply = 0;
+            this.is_ICO_owner = false;     
+                
+            this.is_ICO_started = false;
+            this.is_ICO_in_progress = false;
+            this.is_ICO_failed = false;                
+ 
+        }
+        });
+
+
+    </script>
+  </body>
+</html>

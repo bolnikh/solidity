@@ -1,0 +1,385 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Simple Voting HardHat Local</title>
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+  </head>
+  <body>
+
+
+    <div id="app" class="container">
+        <h1>Simple Voting HardHat Local</h1>
+
+        <div class="row">
+            <div class="col">
+                <form>
+                <div class="mb-3">
+                    <label for="select_account" class="form-label">Account</label>
+                    <select class="form-control" id="select_account" aria-describedby="selectHelp" v-model="account"
+                        v-on:change="updateAccount"
+                    >
+                        <option> -- </option>
+
+                        <option v-for="a in accounts" :key="a.address" :value="a">
+                            {{ a.address }}
+                        </option>
+                    </select>
+                    <div id="selectHelp" class="form-text">Select account to use</div>
+                </div>
+
+                </form>
+            </div>            
+        </div>
+
+        <div class="row mb-3">
+            <div class="col">
+                Account Balance: {{ formatBalanceSimple(this.balance) }}
+            </div>
+            <div class="col">
+                Account Transactions: {{ this.trx_count }}
+            </div>  
+            <div class="col">
+            </div>            
+        </div>
+        <div class="row mb-3">
+            <div class="col">
+                
+            </div>
+            <div class="col">
+                
+            </div>  
+            <div class="col">
+            </div>            
+        </div>
+
+
+
+
+        <hr class="bg-danger border-2 border-top border-danger w-50 mx-auto" />
+
+        <div class="row mt-3 mb-3 bg-light" v-if="!contract_deployed && (account ? account.address : null)">
+            <div class="col">
+                <h1>Simple Voting contract deploy</h1>
+            </div>                      
+        </div>
+        <div class="row mt-3 " v-if="!contract_deployed && (account ? account.address : null)">
+            <div class="col">
+                <label for="num_of_options" class="form-label">Num of options: </label> 
+                <input type="text" v-model="num_of_options" class="form-control" id="num_of_options">
+
+                <label for="vote_start_after" class="form-label">Start after sec: </label> 
+                <input type="text" v-model="vote_start_after" class="form-control" id="vote_start_after">
+
+                <label for="vote_end_after" class="form-label">Stop after sec: </label> 
+                <input type="text" v-model="vote_end_after" class="form-control" id="vote_end_after">
+                
+                <button class="btn btn-primary" v-on:click="deployContract">Deploy</button>
+
+            </div>                      
+        </div>
+        <div class="row mt-3 mb-3 bg-light" v-if="contract_deployed">
+            <div class="col">
+                <h1>Simple Voting contract deployed</h1>
+            </div>                      
+        </div>
+        <div class="row mt-3 mb-3 bg-light" v-if="contract_deployed">
+            <div class="col">
+                Contract address: {{ contract_address }} <br/>
+                In progress: {{ in_progress }} <br/>
+                
+                <hr>
+                User <br/>
+                Voted:  {{ voted }}<br/>
+                Delegate to:  {{ delegate_to }}<br/>   
+
+                <hr>
+
+                Total votes
+                <ul>
+                    <li v-for="(vote, ind) in votes">
+                        {{ind}} : {{vote}}
+                    </li>
+                </ul>
+
+                <hr>
+
+                Currect time: {{ current_time }} <br/>
+                Currect block number: {{ currect_block_number }} <br/>
+                Currect block time: {{ current_block_time }} <br/>
+
+                <button class="btn btn-primary" v-on:click="refreshContractData">Refresh Contract Data</button>
+            </div>                      
+        </div>
+       
+
+        <div class="row mt-3 mb-3 bg-light" v-if="contract_deployed">
+            <div class="col">
+                <h1>Vote</h1>
+            </div>                      
+        </div>
+        <div class="row mt-3 mb-3 " v-if="contract_deployed">
+            <div class="col">
+                <label for="vote_op" class="form-label">Option: </label>                
+            </div>            
+            <div class="col">
+                 <input class="form-control" v-model="vote_op" id="vote_op"/>
+            </div>
+            <div class="col">
+                <button class="btn btn-primary" v-on:click="vote">Vote</button>
+            </div>                      
+        </div> 
+        
+        <div class="row mt-3 mb-3 bg-light" v-if="contract_deployed">
+            <div class="col">
+                <h1>Delegate</h1>
+            </div>                      
+        </div>
+        <div class="row mt-3 mb-3 " v-if="contract_deployed">
+            <div class="col">
+                <label for="delegate_to" class="form-label">Delegate to: </label>                
+            </div>            
+            <div class="col">
+                <select class="form-control" id="delegate_to" aria-describedby="selectHelp" v-model="delegate_to">
+                    <option> -- </option>
+
+                    <option v-for="a in accounts" :key="a.address" :value="a">
+                        {{ a.address }}
+                    </option>
+                </select>
+            </div>
+            <div class="col">
+                <button class="btn btn-primary" v-on:click="delegate">Delegate</button>
+            </div>                      
+        </div> 
+
+
+        <div class="row mt-3 mb-3 bg-light" v-if="contract_deployed">
+            <div class="col">
+                <h1>Delegate vote</h1>
+            </div>                      
+        </div>
+        <div class="row mt-3 mb-3 " v-if="contract_deployed">
+            <div class="col">
+                <label for="vote_op" class="form-label">Option: </label>                
+            </div>            
+            <div class="col">
+                 <input class="form-control" v-model="vote_op" id="vote_op"/>
+            </div>
+            <div class="col">
+            </div>                      
+        </div>         
+        <div class="row mt-3 mb-3 " v-if="contract_deployed">
+            <div class="col">
+                <label for="vote_from" class="form-label">Vote from: </label>                
+            </div>            
+            <div class="col">
+                <select class="form-control" id="vote_from" aria-describedby="selectHelp" v-model="vote_from">
+                    <option> -- </option>
+
+                    <option v-for="a in accounts" :key="a.address" :value="a">
+                        {{ a.address }}
+                    </option>
+                </select>
+            </div>
+            <div class="col">
+                <button class="btn btn-primary" v-on:click="delegateVote">Delegate vote</button>
+            </div>                      
+        </div> 
+
+  </div>
+
+    </div>
+
+    <script src="/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
+
+
+    <script type="module">
+        BigInt.prototype.toJSON = function() {
+        return this.toString();
+        };
+
+        import { ethers } from "https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.min.js";
+        import { hardhat_accounts, activateWallets } from "/js/hardhat_accounts.js";
+        import { bytecode, abi } from "/js/bytecode.js";
+
+        let app = new Vue({
+        el: '#app',
+        data: {
+            account: null,
+            balance: null,
+            trx_count: null,
+            provider: null,
+
+            contract_deployed: false,
+
+            contract: null,
+            contract_address: "",   
+            
+            num_of_options: 3,
+            vote_start_after: 10,
+            vote_end_after: 100,
+
+
+            url: 'http://localhost:8545',
+            accounts: [],
+
+
+            current_time: null,
+            current_block_time: null,
+
+            in_progress: false,
+
+            voted: false,
+            delegate_to: '',
+            votes: [],
+
+            vote_op: 0,
+            vote_from:'',
+
+            
+        },
+
+        methods: {
+            updateAccount: async function() {
+                this.balance = null;
+                this.trx_count = null;
+                
+                this.swichContactToNewAccount();
+                this.refreshContractData();
+            },
+
+            deployContract: async function() {
+                const Factory = new ethers.ContractFactory(abi, bytecode, this.account.wallet);
+
+                const simple_vote = await Factory.deploy(
+                    this.num_of_options, 
+                    Math.floor(Date.now() / 1000) + this.vote_start_after,
+                    Math.floor(Date.now() / 1000) + this.vote_end_after
+                );
+                
+                await simple_vote.waitForDeployment();
+ 
+                this.contract = simple_vote;
+                this.contract_address = await simple_vote.getAddress();
+
+                this.contract_deployed = true;
+            },
+
+            swichContactToNewAccount: async function() {
+                if (this.account && this.contract) {
+                    this.contract = new ethers.Contract(this.contract_address, abi, this.account.wallet);
+                }
+            },
+
+            refreshContractData: async function() {
+                if (this.provider) {
+                    await this.provider.send("evm_mine");
+
+                    this.current_time = Math.floor(Date.now() / 1000);
+                    const latestBlockNumber = await this.provider.getBlockNumber();
+                    this.currect_block_number = latestBlockNumber;
+                    const block = await this.provider.getBlock(latestBlockNumber);
+                    this. current_block_time = block.timestamp;
+
+                    if (this.account) {
+                        this.balance = await this.provider.getBalance(this.account.address);
+                        this.trx_count = await this.provider.getTransactionCount(this.account.address);
+
+                        if (this.contract) {
+                            this.in_progress = await this.contract.getInProgress();
+                            this.voted = await this.contract.getVoted();
+                            this.delegate_to = await this.contract.getDelegateTo();
+                            this.votes = await this.contract.getResult();
+                        }
+                    } else {
+                        this.balance = 0;
+                        this.trx_count = 0;
+
+                        this.in_progress = false;
+                        this.voted = false;
+                        this.delegate_to = '';
+                        this.votes = [];
+                    }
+                }
+            },
+
+            formatBalanceSimple: function (weiBalance) {
+                if (weiBalance == undefined || weiBalance == null) {
+                    return '0';
+                }    
+
+                const ethBalance = parseFloat(ethers.formatEther(weiBalance));
+                
+                if (ethBalance >= 0.001) {
+                    return `${ethBalance.toFixed(6).replace(/\.?0+$/, '')} ETH`;
+                } else {
+                    const gweiBalance = parseFloat(ethers.formatUnits(weiBalance, "gwei"));
+                    if (gweiBalance >= 0.1) {
+                        return `${gweiBalance.toFixed(3).replace(/\.?0+$/, '')} Gwei`;
+                    } else {
+                        return `${BigInt(weiBalance).toLocaleString()} Wei`;
+                    }
+                }
+            },
+            
+            vote: async function() {
+                try {
+                    await this.contract.vote(this.vote_op);
+                    this.refreshContractData();
+                } catch(e) {
+                    console.log(e.message);
+                    alert('Error');
+                }                
+            },
+
+            delegate: async function() {
+                try {
+                    await this.contract.delegate(this.delegate_to.address);
+                    this.refreshContractData();
+                } catch(e) {
+                    console.log(e.message);
+                    alert('Error');
+                }                 
+            }, 
+
+            delegateVote: async function() {
+                try {
+                    await this.contract.delegateVote(this.vote_from.address, this.vote_op);
+                    this.refreshContractData();
+                } catch(e) {
+                    console.log(e.message);
+                    alert('Error');
+                }                
+            },
+        },
+
+
+        mounted: async function() {
+            this.provider = new ethers.JsonRpcProvider(this.url);
+
+            activateWallets(hardhat_accounts, ethers, this.provider);
+            this.accounts = hardhat_accounts;
+  
+          
+            this.current_time = Math.floor(Date.now() / 1000);
+            const latestBlockNumber = await this.provider.getBlockNumber();
+            this.currect_block_number = latestBlockNumber;
+            const block = await this.provider.getBlock(latestBlockNumber);
+            this.current_block_time = block.timestamp;
+
+            this.contract = null;
+            this.contract_address = null;
+
+            this.in_progress = false;
+ 
+        },
+
+        });
+
+
+    </script>
+  </body>
+</html>
