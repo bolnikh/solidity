@@ -5,11 +5,32 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>ICO HardHat Local</title>
     <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .loader-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: rgba(255, 255, 255, 0.8); /* Optional: Add a semi-transparent background */
+            z-index: 9999; /* Ensure it's on top of other content */
+        }
+
+    </style>	
   </head>
   <body>
 
 
     <div id="app" class="container">
+        <div v-if="spinner_active" class="loader-container">
+            <div class="spinner-border text-primary" role="status">
+                <span class="sr-only">Loading...</span>
+            </div>
+        </div>
+		
         <h1>ICO HardHat Local</h1>
 
         <div class="row">
@@ -55,7 +76,45 @@
         </div>
 
 
-
+        <div class="row mb-3">
+            <div class="col">
+            <p class="d-inline-flex gap-1">
+                <a class="btn btn-primary" data-bs-toggle="collapse" href="#collapseExample" role="button" aria-expanded="false" aria-controls="collapseExample">
+                    Read me
+                </a>
+            </p>
+            <div class="collapse" id="collapseExample">
+                <div class="card card-body">
+                    This is example how to create ICO - initial coin offering.
+<br>
+                            We deploy 2 contracts. First contract owner of another contract (ERC20). <br>
+							During ICO user can buy coin for fixed price. <br>
+							After ICO first contract can not sell any coin. <br>
+							If ICO gain enought ether ICO owner can get this ether. <br>
+							If ICO don't gain enought ether all users can get there ether back. <br>
+                    <ul>
+				
+                        <li>
+                            Choose account to use from upper selector.
+                        </li>
+                        <li>
+                            Deploy contracts. 
+                        </li>
+                        <li>
+                            During ICO you can buy coins. 
+                        </li>
+                        <li>
+                            After ICO owner can get ether from contract or users can get there ether back, depends on if ICO get enought ether.
+                        </li>
+						<li>
+							Users will have theire coins.
+						</li>
+                    </ul>
+                </div>
+            </div>
+            </div>        
+        </div>
+		
 
         <hr class="bg-danger border-2 border-top border-danger w-50 mx-auto" />
 
@@ -123,7 +182,7 @@
 
 
 
-                <button class="btn btn-primary" v-on:click="refreshContractsData">Refresh Contracts Data</button>
+                <button class="btn btn-primary mt-3" v-on:click="refreshContractsData">Refresh Contracts Data</button>
             </div>                      
         </div>
        
@@ -182,7 +241,7 @@
         BigInt.prototype.toJSON = function() {
         return this.toString();
         };
-
+	
         import { ethers } from "https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.min.js";
         import { hardhat_accounts, activateWallets } from "/js/hardhat_accounts.js";
         import { ICObytecode, ICO_ABI } from "/js/bytecode.js";
@@ -190,6 +249,7 @@
         let app = new Vue({
         el: '#app',
         data: {
+            spinner_active: true,		
             account: null,
             balance: null,
             trx_count: null,
@@ -238,13 +298,14 @@
             updateAccount: async function() {
                 this.balance = null;
                 this.trx_count = null;
-                
+                this.spinner_active = true;
                 this.swichContactToNewAccount();
                 this.refreshContractsData();
+				this.spinner_active = false;
             },
 
             deployContracts: async function() {
-
+				this.spinner_active = true;
                 const ICOFactory = new ethers.ContractFactory(ICO_ABI, ICObytecode, this.account.wallet);
 
                 const ico = await ICOFactory.deploy(
@@ -270,7 +331,9 @@
 
                 this.contracts_deployed = true;
 
+				this.refreshContractsData();
 
+				this.spinner_active = false;
             },
 
             swichContactToNewAccount: async function() {
@@ -281,6 +344,7 @@
 
             refreshContractsData: async function() {
                 if (this.provider) {
+					this.spinner_active = true;
                     await this.provider.send("evm_mine");
 
                     this.current_time = Math.floor(Date.now() / 1000);
@@ -314,6 +378,7 @@
                         this.is_ICO_failed = false;
                         this.ICO_funded = 0;
                     }
+					this.spinner_active = false;
                 }
             },
 
@@ -322,7 +387,8 @@
                     alert('Set amount to buy');
                     return;
                 }
-
+				
+				this.spinner_active = true;
                 try {
                     let val = this.calc_wei(this.buy_amount, this.buy_amount_coeff);
                     await this.contract_ICO.buyTokens({value: val});
@@ -331,10 +397,11 @@
                     console.log(e.message);
                     alert('Error');
                 }
-
+				this.spinner_active = false;
             },
 
             getFundsBackOnICOFail: async function() {
+				this.spinner_active = true;
                 try {
                     await this.contract_ICO.getFundsBackOnICOFail();
                     this.refreshContractsData();
@@ -342,9 +409,11 @@
                     console.log(e.message);
                     alert('Error');
                 }
+				this.spinner_active = false;
             },            
 
-            withdrawFunds: async function() {             
+            withdrawFunds: async function() {
+				this.spinner_active = true;			
                 try {
                     await this.contract_ICO.withdrawFunds();
                     this.refreshContractsData();
@@ -352,6 +421,7 @@
                     console.log(e.message);
                     alert('Error');
                 }
+				this.spinner_active = false;
             },
 
             formatBalanceSimple: function (weiBalance) {
@@ -424,6 +494,7 @@
             this.is_ICO_in_progress = false;
             this.is_ICO_failed = false;                
  
+			this.spinner_active = false;
         }
         });
 

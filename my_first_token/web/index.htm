@@ -5,11 +5,32 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>My First Token HardHat Local</title>
     <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .loader-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: rgba(255, 255, 255, 0.8); /* Optional: Add a semi-transparent background */
+            z-index: 9999; /* Ensure it's on top of other content */
+        }
+
+    </style>	
   </head>
   <body>
 
 
     <div id="app" class="container">
+        <div v-if="spinner_active" class="loader-container">
+            <div class="spinner-border text-primary" role="status">
+                <span class="sr-only">Loading...</span>
+            </div>
+        </div>
+		
         <h1>My First Token HardHat Local</h1>
 
         <div class="row">
@@ -32,6 +53,37 @@
                 </form>
             </div>            
         </div>
+		
+        <div class="row mb-3">
+            <div class="col">
+            <p class="d-inline-flex gap-1">
+                <a class="btn btn-primary" data-bs-toggle="collapse" href="#collapseExample" role="button" aria-expanded="false" aria-controls="collapseExample">
+                    Read me
+                </a>
+            </p>
+            <div class="collapse" id="collapseExample">
+                <div class="card card-body">
+                    This is example of ERC20 token.
+
+                    <ul>
+                        <li>
+                            Choose account to use from upper selector.
+                        </li>
+                        <li>
+                            Admin can mint, burn, allowance. 
+                        </li>
+                        <li>
+                            User can transfer and give allowance. 
+                        </li>
+                        <li>
+                            User can use allowance.
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            </div>        
+        </div>
+		
 
         <div class="row mb-3">
             <div class="col">
@@ -455,6 +507,7 @@
         let app = new Vue({
         el: '#app',
         data: {
+		    spinner_active: true,
             account: null,
             balance: null,
             trx_count: null,
@@ -514,7 +567,7 @@
             refreshAccount: async function() {
 
                 if (this.account.address) {
-
+					this.spinner_active = true;
                     this.balance = await this.provider.getBalance(this.account.address);
                     this.trx_count = await this.provider.getTransactionCount(this.account.address);
                     
@@ -531,21 +584,22 @@
                     this.decimals  = await this.contract.getDecimals();
 
                     let filterTransfer = this.contract.filters.Transfer(this.account.address);
-                    this.transferFromEvents = await this.contract.queryFilter(filterTransfer, -10);
+                    this.transferFromEvents = await this.contract.queryFilter(filterTransfer, 0, 10);
 
                     let filterTransfer1 = this.contract.filters.Transfer(null, this.account.address);
-                    this.transferToEvents = await this.contract.queryFilter(filterTransfer1, -10);
+                    this.transferToEvents = await this.contract.queryFilter(filterTransfer1, 0, 10);
 
                     let filterApproval = this.contract.filters.Approval(this.account.address);
-                    this.approvalFromEvents = await this.contract.queryFilter(filterApproval, -10);
+                    this.approvalFromEvents = await this.contract.queryFilter(filterApproval, 0, 10);
 
                     let filterApproval1 = this.contract.filters.Approval(null, this.account.address);
-                    this.approvalToEvents = await this.contract.queryFilter(filterApproval1, -10);                   
-
+                    this.approvalToEvents = await this.contract.queryFilter(filterApproval1, 0, 10);                   
+					this.spinner_active = false;
                 }
             },
 
             transfer: async function() {
+				this.spinner_active = true;
                 try {
                    let val = this.calc_wei(this.transfer_amount, this.transfer_amount_coeff);
                    await this.contract.transfer(this.transfer_account.address, val);
@@ -553,10 +607,12 @@
                 } catch(e) {
                     console.log(e.message);
                     alert('Error');
-                }  
+                }
+				this.spinner_active = false;				
             },
 
             approve: async function() {
+				this.spinner_active = true;
                 try {
                    let val = this.calc_wei(this.approve_amount, this.approve_amount_coeff);
                    await this.contract.approve(this.approve_account.address, val);
@@ -565,9 +621,11 @@
                     console.log(e.message);
                     alert('Error');
                 }
+				this.spinner_active = false;
             },
 
             transferFrom: async function() {
+				this.spinner_active = true;
                 try {
                     let val = this.calc_wei(this.transferFrom_amount, this.transferFrom_amount_coeff);
                     await this.contract.transferFrom(this.transferFrom_from.address, this.transferFrom_to.address, val);
@@ -576,18 +634,22 @@
                     console.log(e.message);
                     alert('Error');
                 }
+				this.spinner_active = false;
             },
 
             allowance: async function() {
+				this.spinner_active = true;
                 try {
                     this.allowance_amount = await this.contract.allowance(this.allowance_owner.address, this.allowance_spender.address);
                 } catch(e) {
                     console.log(e.message);
                     alert('Error');
                 }
+				this.spinner_active = false;
             },
 
             adminMint: async function() {
+				this.spinner_active = true;
                 try {
                    let val = this.calc_wei(this.admin_mint_amount, this.admin_mint_amount_coeff);
                    await this.contract.adminMint(this.admin_mint_account.address, val);
@@ -595,10 +657,12 @@
                 } catch(e) {
                     console.log(e.message);
                     alert('Error');
-                } 
+                }
+				this.spinner_active = false;				
             },
 
             adminBurn: async function() {
+				this.spinner_active = true;
                 try {
                    let val = this.calc_wei(this.admin_burn_amount, this.admin_burn_amount_coeff);
                    await this.contract.adminBurn(this.admin_burn_account.address, val);
@@ -606,7 +670,8 @@
                 } catch(e) {
                     console.log(e.message);
                     alert('Error');
-                } 
+                }
+				this.spinner_active = false;				
             },
 
             formatBalanceSimple: function (weiBalance) {
@@ -668,6 +733,7 @@
 
             ];
 
+			this.spinner_active = false;
         }
         });
 

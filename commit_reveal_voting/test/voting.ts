@@ -1,23 +1,25 @@
 import { expect } from "chai";
 import { network } from "hardhat";
+import { Voting } from "../types/ethers-contracts/Voting.js";
+import { Signer } from 'ethers';
 
 const { ethers } = await network.connect();
 
-let voting;
+let voting : Voting;
 
 let num_of_option = 3;
-let commit_start;
-let commit_end;
-let reveal_start;
-let reveal_end;
+let commit_start : number;
+let commit_end : number;
+let reveal_start : number;
+let reveal_end : number;
 
-let user1;
-let user2;
-let user3;
-let user4;
-let user5;
+let user1 : Signer ;
+let user2 : Signer ;
+let user3 : Signer ;
+let user4 : Signer ;
+let user5 : Signer ;
 
-let snapshotId;
+let snapshotId : number;
 
 let b  = "0x5b07e077a81ffc6b47435f65a8727bcc542bc6fc0f25a56210efb1a74b88a5ae";
 let b0 = "0x0000000000000000000000000000000000000000000000000000000000000000";
@@ -33,6 +35,7 @@ describe("Voting", function () {
     reveal_end = Math.floor(Date.now() / 1000) + 200;
 
     [user1, user2, user3, user4, user5] = await ethers.getSigners();
+
     
     let voting_factory = await ethers.getContractFactory("Voting", user1);
 
@@ -53,7 +56,7 @@ describe("Voting", function () {
     expect(await voting.reveal_end()).to.equal(reveal_end);
 
     let res = await voting.getResult();
-    for (let i; i < res.length; i++) {
+    for (let i = 0; i < res.length; i++) {
       expect(res[i]).to.equal(0);
     }    
   });

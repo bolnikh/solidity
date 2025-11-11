@@ -5,11 +5,32 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Simple Bank Local</title>
     <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .loader-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: rgba(255, 255, 255, 0.8); /* Optional: Add a semi-transparent background */
+            z-index: 9999; /* Ensure it's on top of other content */
+        }
+
+    </style>	
   </head>
   <body>
 
 
     <div id="app" class="container">
+        <div v-if="spinner_active" class="loader-container">
+            <div class="spinner-border text-primary" role="status">
+                <span class="sr-only">Loading...</span>
+            </div>
+        </div>
+		
         <h1>Simple Bank Local</h1>
 
         <div class="row">
@@ -33,6 +54,10 @@
             </div>            
         </div>
 
+
+
+
+
         <div class="row mb-3">
             <div class="col">
                 Account Balance: {{ formatBalanceSimple(this.balance) }}
@@ -55,6 +80,38 @@
 
             </div>            
         </div>
+		
+        
+		<div class="row mb-3">
+            <div class="col">
+            <p class="d-inline-flex gap-1">
+                <a class="btn btn-primary" data-bs-toggle="collapse" href="#collapseExample" role="button" aria-expanded="false" aria-controls="collapseExample">
+                    Read me
+                </a>
+            </p>
+            <div class="collapse" id="collapseExample">
+                <div class="card card-body">
+                    This is example how to create offline sign bill and pay it.
+
+                    <ul>
+                        <li>
+                            Choose account to use from upper selector.
+                        </li>
+                        <li>
+                            Deploy contract (first account is always owner).
+                        </li>
+                        <li>
+                            Generate signature using lower form. It is offline operation. 
+                        </li>
+                        <li>
+                            You can claim bill from upper form by put the same data as in lower form. Bill number must be unique and can be used only once.
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            </div>        
+        </div>
+		
 
         <div class="row mb-3" v-if="account">
             <div class="col">
@@ -108,6 +165,7 @@
         let app = new Vue({
         el: '#app',
         data: {
+            spinner_active: true,		
             account: null,
             balance: null,
             trx_count: null,
@@ -137,7 +195,7 @@
             refreshAccount: async function() {
 
                 if (this.account.address) {
-
+					this.spinner_active = true;
                     this.balance = await this.provider.getBalance(this.account.address);
                     this.trx_count = await this.provider.getTransactionCount(this.account.address);
                     
@@ -146,10 +204,13 @@
                     this.contract_balance = await this.contract.getBalance();
 
                     this.all_contract_balance = await this.provider.getBalance(this.contract_address); 
+					
+					this.spinner_active = false;
                 }
             },
 
             deposit: async function() {
+				this.spinner_active = true;
                 try {
                     let val = this.calc_wei(this.amount_deposit, this.amount_deposit_coeff);
                     await this.contract.deposit({value: val});
@@ -157,10 +218,12 @@
                 } catch(e) {
                     console.log(e.message);
                     alert('Error');
-                }                
+                }
+				this.spinner_active = false;                
             },
 
             withdraw: async function() {
+				this.spinner_active = true;
                 try {
                     let val = this.calc_wei(this.amount_withdraw, this.amount_withdraw_coeff);
                     await this.contract.withdraw(val);
@@ -168,7 +231,8 @@
                 } catch(e) {
                     console.log(e.message);
                     alert('Error');
-                }                
+                }
+				this.spinner_active = false;                
             },
 
             formatBalanceSimple: function (weiBalance) {
@@ -221,6 +285,7 @@
             // Create a contract
             //this.contract = new ethers.Contract(this.contract_address, this.abi, this.provider);
 
+			this.spinner_active = false;
         }
         });
 

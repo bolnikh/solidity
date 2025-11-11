@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Simple Voting HardHat Local</title>
+    <title>Sign Bill HardHat Local</title>
     <link href="/css/bootstrap.min.css" rel="stylesheet">
     <style>
         .loader-container {
@@ -19,19 +19,19 @@
             z-index: 9999; /* Ensure it's on top of other content */
         }
 
-    </style>	
+    </style>
   </head>
   <body>
 
 
-    <div id="app" class="container">
+    <div id="app" class="container">       
         <div v-if="spinner_active" class="loader-container">
             <div class="spinner-border text-primary" role="status">
                 <span class="sr-only">Loading...</span>
             </div>
         </div>
-		
-        <h1>Simple Voting HardHat Local</h1>
+
+        <h1>Sign Bill HardHat Local</h1>
 
         <div class="row">
             <div class="col">
@@ -85,70 +85,50 @@
             </p>
             <div class="collapse" id="collapseExample">
                 <div class="card card-body">
-                    This is example of simple voting.
+                    This is example how to create offline sign bill and pay it.
 
                     <ul>
                         <li>
                             Choose account to use from upper selector.
                         </li>
                         <li>
-                            Deploy contract.
+                            Deploy contract (first account is always owner).
                         </li>
                         <li>
-                            Vote, delegate, delegate vote. 
+                            Generate signature using lower form. It is offline operation. 
+                        </li>
+                        <li>
+                            You can claim bill from upper form by put the same data as in lower form. Bill number must be unique and can be used only once.
                         </li>
                     </ul>
                 </div>
             </div>
             </div>        
         </div>
-		
+
+
 
         <hr class="bg-danger border-2 border-top border-danger w-50 mx-auto" />
 
         <div class="row mt-3 mb-3 bg-light" v-if="!contract_deployed && (account ? account.address : null)">
             <div class="col">
-                <h1>Simple Voting contract deploy</h1>
+                <h1>Sign Bill contract deploy</h1>
             </div>                      
         </div>
         <div class="row mt-3 " v-if="!contract_deployed && (account ? account.address : null)">
             <div class="col">
-                <label for="num_of_options" class="form-label">Num of options: </label> 
-                <input type="text" v-model="num_of_options" class="form-control" id="num_of_options">
-
-                <label for="vote_start_after" class="form-label">Start after sec: </label> 
-                <input type="text" v-model="vote_start_after" class="form-control" id="vote_start_after">
-
-                <label for="vote_end_after" class="form-label">Stop after sec: </label> 
-                <input type="text" v-model="vote_end_after" class="form-control" id="vote_end_after">
-                
                 <button class="btn btn-primary" v-on:click="deployContract">Deploy</button>
-
             </div>                      
         </div>
         <div class="row mt-3 mb-3 bg-light" v-if="contract_deployed">
             <div class="col">
-                <h1>Simple Voting contract deployed</h1>
+                <h1>Sign Bill contract deployed</h1>
             </div>                      
         </div>
         <div class="row mt-3 mb-3 bg-light" v-if="contract_deployed">
             <div class="col">
                 Contract address: {{ contract_address }} <br/>
-                In progress: {{ in_progress }} <br/>
-                
-                <hr>
-                User <br/>
-                Voted:  {{ voted }}<br/>
-                Delegate to:  {{ delegate_to }}<br/>   
-
-                <hr>
-
-                Total votes
-                <ul>
-                    <li v-for="(vote, ind) in votes">
-                        {{ind}} : {{vote}}
-                    </li>
-                </ul>
+                Contract balance: {{ formatBalanceSimple(contract_balance) }} <br/>
 
                 <hr>
 
@@ -161,91 +141,76 @@
         </div>
        
 
+      
+
         <div class="row mt-3 mb-3 bg-light" v-if="contract_deployed">
             <div class="col">
-                <h1>Vote</h1>
+                <h1>Submit Bill</h1>
+            </div>                      
+        </div>
+        <div class="row mt-3 " v-if="contract_deployed">
+            <div class="col">
+                <label for="bill_amount" class="form-label">Bill amount, ethers: </label>                
+                <input class="form-control" v-model="bill_amount" id="bill_amount" @input="validateFloat('sig_bill_amount')" required/> <br/>
+
+                <div v-if="errors['bill_amount']" class="mb-3 small text-danger">
+                    {{ errors['bill_amount'] }}
+                </div>
+
+                <label for="bill_num" class="form-label">Bill num: </label>                
+                <input class="form-control" v-model="bill_num" id="bill_num"/> <br/>
+
+                <div v-if="errors['bill_num']" class="mb-3 small text-danger">
+                    {{ errors['bill_num'] }}
+                </div>
+
+                <label for="bill_sig" class="form-label">Bill signature: </label>                
+                <input class="form-control" v-model="bill_sig" id="bill_sig"/> <br/>
+            </div>                    
+        </div>                    
+        <div class="row mt-3  " v-if="contract_deployed">
+            <div class="col">
+                <button class="btn btn-primary" v-on:click="submit_bill">Submit Bill</button>
+            </div>  
+        </div>
+
+
+        <hr class="bg-danger border-2 border-top border-danger w-50 mx-auto" />
+
+        <div class="row mt-3 mb-3 bg-light" v-if="contract_deployed">
+            <div class="col">
+                <h1>Calculate Bill signature</h1>
             </div>                      
         </div>
         <div class="row mt-3 mb-3 " v-if="contract_deployed">
             <div class="col">
-                <label for="vote_op" class="form-label">Option: </label>                
-            </div>            
-            <div class="col">
-                 <input class="form-control" v-model="vote_op" id="vote_op"/>
-            </div>
-            <div class="col">
-                <button class="btn btn-primary" v-on:click="vote">Vote</button>
-            </div>                      
-        </div> 
-        
-        <div class="row mt-3 mb-3 bg-light" v-if="contract_deployed">
-            <div class="col">
-                <h1>Delegate</h1>
-            </div>                      
-        </div>
-        <div class="row mt-3 mb-3 " v-if="contract_deployed">
-            <div class="col">
-                <label for="delegate_to" class="form-label">Delegate to: </label>                
-            </div>            
-            <div class="col">
-                <select class="form-control" id="delegate_to" aria-describedby="selectHelp" v-model="delegate_to">
-                    <option> -- </option>
+                <label for="sig_bill_amount" class="form-label">Bill amount, ethers: </label>                
+                <input class="form-control" v-model="sig_bill_amount" id="sig_bill_amount" @input="validateFloat('sig_bill_amount')" required/> <br/>
+                <div v-if="errors['sig_bill_amount']" class="mb-3 small text-danger">
+                    {{ errors['sig_bill_amount'] }}
+                </div>
 
-                    <option v-for="a in accounts" :key="a.address" :value="a">
-                        {{ a.address }}
-                    </option>
-                </select>
-            </div>
-            <div class="col">
-                <button class="btn btn-primary" v-on:click="delegate">Delegate</button>
-            </div>                      
-        </div> 
+                <label for="sig_bill_num" class="form-label">Bill num: </label>                
+                <input class="form-control" v-model="sig_bill_num" id="sig_bill_num" @input="validateInt('sig_bill_num')" required/> <br/>
+                <div v-if="errors['sig_bill_num']" class="mb-3 small text-danger">
+                    {{ errors['sig_bill_num'] }}
+                </div>
 
-
-        <div class="row mt-3 mb-3 bg-light" v-if="contract_deployed">
-            <div class="col">
-                <h1>Delegate vote</h1>
-            </div>                      
-        </div>
-        <div class="row mt-3 mb-3 " v-if="contract_deployed">
-            <div class="col">
-                <label for="vote_op" class="form-label">Option: </label>                
-            </div>            
-            <div class="col">
-                 <input class="form-control" v-model="vote_op" id="vote_op"/>
-            </div>
-            <div class="col">
-            </div>                      
+                <label for="sig_hash" class="form-label">Bill signature: </label>                
+                <input class="form-control" v-model="sig_hash" id="sig_hash"/> <br/>
+            </div>                   
         </div>         
-        <div class="row mt-3 mb-3 " v-if="contract_deployed">
-            <div class="col">
-                <label for="vote_from" class="form-label">Vote from: </label>                
-            </div>            
-            <div class="col">
-                <select class="form-control" id="vote_from" aria-describedby="selectHelp" v-model="vote_from">
-                    <option> -- </option>
-
-                    <option v-for="a in accounts" :key="a.address" :value="a">
-                        {{ a.address }}
-                    </option>
-                </select>
-            </div>
-            <div class="col">
-                <button class="btn btn-primary" v-on:click="delegateVote">Delegate vote</button>
-            </div>                      
-        </div> 
-
   </div>
 
     </div>
 
+
     <script src="/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
 
-
     <script type="module">
         BigInt.prototype.toJSON = function() {
-        return this.toString();
+            return this.toString();
         };
 
         import { ethers } from "https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.min.js";
@@ -255,7 +220,7 @@
         let app = new Vue({
         el: '#app',
         data: {
-		    spinner_active: true,
+            spinner_active: true,
             account: null,
             balance: null,
             trx_count: null,
@@ -265,60 +230,58 @@
 
             contract: null,
             contract_address: "",   
+            contract_balance: "",   
             
-            num_of_options: 3,
-            vote_start_after: 10,
-            vote_end_after: 100,
-
-
             url: 'http://localhost:8545',
             accounts: [],
-
 
             current_time: null,
             current_block_time: null,
 
-            in_progress: false,
+            sig_bill_amount: 1,
+            sig_bill_num: 1,
+            sig_hash: null,
 
-            voted: false,
-            delegate_to: '',
-            votes: [],
+            bill_amount: 1,
+            bill_num: 1,
+            bill_sig: "",
 
-            vote_op: 0,
-            vote_from:'',
-            
+
+            errors: [],
         },
 
         methods: {
             updateAccount: async function() {
-				this.spinner_active = true;
+                this.spinner_active = true;
                 this.balance = null;
                 this.trx_count = null;
                 
                 this.swichContactToNewAccount();
                 this.refreshContractData();
-				this.spinner_active = false;
+                this.calc_sig_hash();
+                this.spinner_active = false;
             },
 
             deployContract: async function() {
-				this.spinner_active = true;
-				
-                const Factory = new ethers.ContractFactory(abi, bytecode, this.account.wallet);
+                this.spinner_active = true;
+                const Factory = new ethers.ContractFactory(abi, bytecode, this.accounts[0].wallet);
 
-                const simple_vote = await Factory.deploy(
-                    this.num_of_options, 
-                    Math.floor(Date.now() / 1000) + this.vote_start_after,
-                    Math.floor(Date.now() / 1000) + this.vote_end_after
-                );
+                const contract = await Factory.deploy({value: ethers.parseEther("100")});
                 
-                await simple_vote.waitForDeployment();
+                await contract.waitForDeployment();
  
-                this.contract = simple_vote;
-                this.contract_address = await simple_vote.getAddress();
+                this.contract = contract;
+                this.contract_address = await contract.getAddress();
+                this.contract_balance = await this.provider.getBalance(this.contract_address);
 
                 this.contract_deployed = true;
-				
-				this.spinner_active = false;
+
+                if (this.account != this.accounts[0]) {
+                    this.swichContactToNewAccount();
+                }
+
+                this.calc_sig_hash();
+                this.spinner_active = false;
             },
 
             swichContactToNewAccount: async function() {
@@ -329,8 +292,6 @@
 
             refreshContractData: async function() {
                 if (this.provider) {
-					this.spinner_active = true;
-				
                     await this.provider.send("evm_mine");
 
                     this.current_time = Math.floor(Date.now() / 1000);
@@ -343,23 +304,17 @@
                         this.balance = await this.provider.getBalance(this.account.address);
                         this.trx_count = await this.provider.getTransactionCount(this.account.address);
 
-                        if (this.contract) {
-                            this.in_progress = await this.contract.getInProgress();
-                            this.voted = await this.contract.getVoted();
-                            this.delegate_to = await this.contract.getDelegateTo();
-                            this.votes = await this.contract.getResult();
+                        if (this.contract_deployed) {
+                            this.contract_balance = await this.provider.getBalance(this.contract_address);
+                        } else {
+                            this.contract_balance = null;
                         }
                     } else {
                         this.balance = 0;
                         this.trx_count = 0;
 
-                        this.in_progress = false;
-                        this.voted = false;
-                        this.delegate_to = '';
-                        this.votes = [];
+                        this.contract_balance = null;
                     }
-					
-					this.spinner_active = false;
                 }
             },
 
@@ -382,40 +337,81 @@
                 }
             },
             
-            vote: async function() {
-				this.spinner_active = true;
-                try {
-                    await this.contract.vote(this.vote_op);
-                    this.refreshContractData();
-                } catch(e) {
-                    console.log(e.message);
-                    alert('Error');
+            validateInt: function(fieldName) {
+                this.errors[fieldName] = ''
+                
+                const value = this[fieldName];
+                
+                if (value === '') {
+                    this.errors[fieldName] = 'Поле обязательно для заполнения'
+                    return;
                 }
-				this.spinner_active = false;                
+                
+                if (!/^-?\d+$/.test(value)) {
+                    this.errors[fieldName] = 'Введите целое число'
+                }
             },
 
-            delegate: async function() {
-				this.spinner_active = true;
-                try {
-                    await this.contract.delegate(this.delegate_to.address);
-                    this.refreshContractData();
-                } catch(e) {
-                    console.log(e.message);
-                    alert('Error');
+            validateFloat: function(fieldName) {
+                this.errors[fieldName] = ''
+                
+                const value = this[fieldName];
+                
+                if (value === '') {
+                    this.errors[fieldName] = 'Поле обязательно для заполнения'
+                    return;
                 }
-				this.spinner_active = false;
-            }, 
+                
+                if (!/^-?\d*\.?\d+$/.test(value) || value == '-') {
+                    this.errors[fieldName] = 'Введите число'
+                }
+            },
 
-            delegateVote: async function() {
-				this.spinner_active = true;
+            submit_bill: async function() {
+                this.spinner_active = true;
+
                 try {
-                    await this.contract.delegateVote(this.vote_from.address, this.vote_op);
+                    await this.contract.pay_bill(
+                        BigInt(this.bill_num), 
+                        BigInt(ethers.parseEther("" + this.bill_amount)), 
+                        ethers.getBytes(this.bill_sig)
+                    );
                     this.refreshContractData();
                 } catch(e) {
                     console.log(e.message);
                     alert('Error');
                 }
-				this.spinner_active = false;
+
+                this.spinner_active = false;
+            },
+
+
+            calc_sig_hash: async function() {
+                if (this.account && this.contract_deployed) {
+                    if (
+                        this.sig_bill_amount == '' ||
+                        this.sig_bill_amount == '-' ||
+                        !/^-?\d*\.?\d+$/.test(this.sig_bill_amount) ||
+                        this.sig_bill_num == '' ||
+                        !/^-?\d+$/.test(this.sig_bill_num)
+                    ) {
+                        this.sig_hash = '';
+                        return;
+                    }
+
+
+                    const hash = ethers.solidityPackedKeccak256(
+                        ["address", "uint256", "uint256", "address"],
+                        [this.account.address, BigInt(ethers.parseEther(""+this.sig_bill_amount)), BigInt(this.sig_bill_num), this.contract_address]
+                    );
+
+                    const messageHashBin = ethers.getBytes(hash);
+
+                    this.sig_hash = await this.accounts[0].wallet.signMessage(messageHashBin);
+
+                } else {
+                    this.sig_hash = '';
+                }
             },
         },
 
@@ -435,10 +431,21 @@
 
             this.contract = null;
             this.contract_address = null;
+            this.contract_balance = null;
 
-            this.in_progress = false;
- 
-			this.spinner_active = false;
+            this.calc_sig_hash(); 
+
+            this.spinner_active = false;
+        },
+
+
+        watch: {
+            sig_bill_amount: function (val) {
+                this.calc_sig_hash();
+            },
+            sig_bill_num: function (val) {
+                this.calc_sig_hash();
+            }
         },
 
         });

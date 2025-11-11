@@ -1,0 +1,39 @@
+{
+  "_format": "hh3-sol-build-info-1",
+  "id": "solc-0_8_28-db4b4d4a1fac459a349ef63bef43c5261d4e7c21",
+  "solcVersion": "0.8.28",
+  "solcLongVersion": "0.8.28+commit.7893614a",
+  "userSourceNameMap": {
+    "contracts/SimpleVoting.sol": "project/contracts/SimpleVoting.sol"
+  },
+  "input": {
+    "language": "Solidity",
+    "settings": {
+      "evmVersion": "cancun",
+      "optimizer": {
+        "enabled": true,
+        "runs": 200
+      },
+      "outputSelection": {
+        "*": {
+          "": [
+            "ast"
+          ],
+          "*": [
+            "abi",
+            "evm.bytecode",
+            "evm.deployedBytecode",
+            "evm.methodIdentifiers",
+            "metadata"
+          ]
+        }
+      },
+      "remappings": []
+    },
+    "sources": {
+      "project/contracts/SimpleVoting.sol": {
+        "content": "// SPDX-License-Identifier: UNLICENSED\r\npragma solidity ^0.8.28;\r\n\r\ncontract SimpleVoting\r\n{\r\n    uint public num_of_options;\r\n    uint public vote_start;\r\n    uint public vote_end;\r\n\r\n    uint[] vote_result;\r\n\r\n    mapping(address => bool) voted;\r\n    mapping(address => address) delegated;\r\n\r\n\r\n    modifier goodOption(uint num) {\r\n        require(num < num_of_options, \"Wrong num\");\r\n        _;\r\n    }\r\n\r\n    modifier notZeroAddress(address addr) {\r\n        require(addr != address(0), \"Empty address not allowed\");\r\n        _;\r\n    }\r\n\r\n    modifier inProgress() {\r\n        require(vote_start <= block.timestamp && block.timestamp <= vote_end, \"Vote is not in progress\");\r\n        _;\r\n    }\r\n\r\n    constructor(uint _num_of_option, uint _vote_start, uint _vote_end) \r\n    {\r\n        num_of_options = _num_of_option;\r\n        vote_start = _vote_start;\r\n        vote_end = _vote_end;\r\n\r\n        vote_result = new uint[](num_of_options);\r\n    }\r\n\r\n    function vote(uint option_num) external goodOption(option_num) inProgress\r\n    {\r\n        if (voted[msg.sender] == true) {\r\n            revert(\"Already vote\");\r\n        }\r\n        voted[msg.sender] = true;\r\n        vote_result[option_num]++;\r\n    }\r\n\r\n    function delegate(address to) external notZeroAddress(to)\r\n    {\r\n        delegated[msg.sender] = to;\r\n    }\r\n\r\n    function delegateVote(address from, uint option_num) external goodOption(option_num) notZeroAddress(from) inProgress\r\n    {\r\n        if (voted[from] == true) {\r\n            revert(\"Already vote\");\r\n        }\r\n        if (delegated[from] != msg.sender) {\r\n            revert(\"Not delegated\");\r\n        }\r\n        voted[from] = true;\r\n        vote_result[option_num]++;\r\n    }\r\n\r\n    function getResult() external view returns (uint[] memory)\r\n    {\r\n        return vote_result;\r\n    }\r\n\r\n    function getVoted() external view returns(bool)\r\n    {\r\n        return voted[msg.sender];\r\n    }\r\n\r\n    function getDelegateTo() external view returns(address)\r\n    {\r\n        return delegated[msg.sender];\r\n    }\r\n\r\n    function getInProgress() external view returns(bool)\r\n    {\r\n        return vote_start <= block.timestamp && block.timestamp <= vote_end;\r\n    }\r\n}"
+      }
+    }
+  }
+}
